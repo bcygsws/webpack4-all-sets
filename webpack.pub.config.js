@@ -10,7 +10,7 @@ html-webpack-plugin包有两个作用：
 */
 const htmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
-    mode: 'production',//告诉webpack是生产环境还是开发环境，mode取值：'production' 'development' 'none'
+    // mode: 'production',//告诉webpack是生产环境还是开发环境，mode取值：'production' 'development' 'none'
     // resolve()方法把多个片段从右往左解析成绝对路径，如果拼接后还不是绝对路径，将自动叠加上当前目录
     // 绝对路径以 /开头
     // entry: './src/main.js',
@@ -38,7 +38,12 @@ module.exports = {
             // 如果从右往左组织的路径片段，不是绝对路径(/开头)，会自动叠加上本地目录
             // 使用path.join(__dirname,'./src/index.html')也可以
             template: './src/index.html',
-            filename: 'index.html'
+            filename: 'index.html',
+            minify: {//minify是一个压缩选项，默认值为false,表示默认不对html文件进行压缩
+                removeComments: true,//移除注释
+                collapseWhitespace: true,//移除空格 
+                removeAttributeQuotes: true//移除标签中属性值的引号
+            }
         }),
         /* 
         CommonsChunkPlugin在webpack4中已被移除，是被移除的四个常用plugin之一（UglifyjsWebpackPlugin，CommonsChunkPlugin，ModuleConcatenationPlugin，NoEmitOnErrorsPlugin），改用optimization.splitChunks和optimization.runtimeChunk替代

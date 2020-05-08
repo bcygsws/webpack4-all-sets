@@ -29,7 +29,12 @@ module.exports = {
             // 如果从右往左组织的路径片段，不是绝对路径(/开头)，会自动叠加上本地目录
             // 使用path.join(__dirname,'./src/index.html')也可以
             template: './src/index.html',
-            filename: 'index.html'
+            filename: 'index.html',
+            minify: {//是一个压缩选项，minify默认值为false,表示不对生成的html文件进行压缩
+                removeComments: true,//移除注释
+                collapseWhitespace: true,//移除空格
+                removeAttributeQuotes:true//移除属性值的引号(并不是所有的引号都去掉，去掉引号会发生的错误的引号不会被移除)
+            }
         })
     ],
     optimization: {//bundle.js中只存放自己的包，把main.js中引入的第三方包抽离出来
