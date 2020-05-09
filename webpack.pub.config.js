@@ -9,6 +9,12 @@ html-webpack-plugin包有两个作用：
 2.将打包好的bundle.js文件，追加到</body>标签前面
 */
 const htmlWebpackPlugin = require('html-webpack-plugin');
+/*
+mini-css-extract-plugin 分离css
+optimize-css-assets-webpack-plugin 压缩css
+*/
+const miniCssExtractPlugin = require('mini-css-extract-plugin');
+const optimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 module.exports = {
     // mode: 'production',//告诉webpack是生产环境还是开发环境，mode取值：'production' 'development' 'none'
     // resolve()方法把多个片段从右往左解析成绝对路径，如果拼接后还不是绝对路径，将自动叠加上当前目录
@@ -54,7 +60,10 @@ module.exports = {
         //     filename: 'vendors.js'//指定抽离的第三方包文件，将来打包时除了会有bundle.js文件以外，还有一个抽离的第三方包文件vendors.js
 
         // })
-
+        new miniCssExtractPlugin({
+            filename: ' css/[name].css',
+            chunkFilename: '[id].css'
+        })
     ],
     // 分离包
     optimization: {//bundle.js中只存放自己的包，把main.js中引入的第三方包抽离出来
@@ -84,13 +93,44 @@ module.exports = {
                 cache: true,
                 parallel: true, //并行压缩
                 sourceMap: true //源码映射
-            })
+            }),
+            // 対生成的css代码进行压缩，mode='production'是生效
+            new optimizeCssAssetsWebpackPlugin()
         ]
     },
     module: {
         rules: [
-            { test: /\.css$/, use: ['style-loader', 'css-loader'] },
-            { test: /\.scss$/, use: ['style-loader', 'css-loader', 'sass-loader'] },
+            {
+                test: /\.css$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    // 配置了{ loader: miniCssExtractPlugin.loader }，就不用配置style-loader
+                    // {loader:'style-loader'} //将处理结束的css代码存到js中，运行时嵌入到<style></style>标签中，然后挂载到页面上
+                    { loader: miniCssExtractPlugin.loader },
+                    { loader: 'css-loader' },//css加载器，使得webpack能够识别css代码
+                    { loader: 'postcss-loader' }//承载autoprefixer功能，为css添加前缀
+                ]
+            },
+            {
+                test: /\.scss$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    { loader: miniCssExtractPlugin.loader },
+                    // 'style-loader',
+                    { loader: 'css-loader' },
+                    { loader: 'postcss-loader' },
+                    {
+                        loader: 'sass-loader',
+                        options: {//loader的额外参数，配置视loader具体而定  
+                            sourceMap: true//要安装resolve-url-loader插件，当此配置启用，才能正确加载sass里的相对路径
+                        }
+                    },
+
+
+                ]
+            },
             { test: /\.less$/, use: ['style-loader', 'css-loader', 'less-loader'] },
             // { test: /\.(png|jpg|jpeg|gif|bmp)$/, use: 'url-loader?limit=3462842&name=images/[hash:8]-[name][ext'},
             {
