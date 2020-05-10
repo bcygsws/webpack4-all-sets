@@ -1,4 +1,5 @@
 /* jshint esversion: 6 */
+// 对于webpack4使用的新插件，可以在ngithub或者npm中搜索这些插件名，然后会有对应的配置说明
 const path = require('path');
 // 导入每次删除【打包文件夹】的插件
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -61,8 +62,10 @@ module.exports = {
 
         // })
         new miniCssExtractPlugin({
-            filename: ' css/[name].css',
-            chunkFilename: '[id].css'
+            // name是entry入口声明的文件名字，本配置中是app
+            filename: ' css/[name].css'
+            // 打包的组块文件名，可选
+            // ,chunkFilename:'css/[id].css'
         })
     ],
     // 分离包
@@ -89,6 +92,7 @@ module.exports = {
             name: 'manifest'
         },
         minimizer: [
+            // 对生成的js代码中进行压缩
             new UglifyJsPlugin({
                 cache: true,
                 parallel: true, //并行压缩
@@ -131,13 +135,35 @@ module.exports = {
 
                 ]
             },
-            { test: /\.less$/, use: ['style-loader', 'css-loader', 'less-loader'] },
+            {
+                test: /\.less$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    { loader: miniCssExtractPlugin.loader },
+                    { loader: 'css-loader' },
+                    { loader: 'postcss-loader' },
+                    {
+                        loader: 'less-loader',
+                        options: {//loader的额外参数，配置视loader具体而定  
+                            sourceMap: true//要安装resolve-url-loader插件，当此配置启用，才能正确加载sass里的相对路径
+                        }
+                    }
+                ]
+            },
             // { test: /\.(png|jpg|jpeg|gif|bmp)$/, use: 'url-loader?limit=3462842&name=images/[hash:8]-[name][ext'},
             {
                 test: /\.(jpg|jpeg|bmp|png|gif)$/,
                 loader: 'url-loader',
                 options: {
+                    // 打包到本地的文件路径
                     outputPath: './images',
+                    /* 
+                       options选项中这个publicPath必须配置，否则下面分离css包后，npm run dev是图片不显示。
+                       原因是：分离css包时，分离的css文件放在css文件夹下，生成的托管页面中图片的路径变成了http://localhost:3000/%20css/images/00759c6d-VDD.jpeg， 托管图片等静态资源的路径使用publicPath
+                       声明，../images,让图片路径设定为localhost:3000/images/00759c6d-VDD.jpeg
+                    */
+                    publicPath: '../images',
                     // 图片实际大小为48509
                     // limit: 48510,
                     limit: 48500,

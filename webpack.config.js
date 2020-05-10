@@ -9,6 +9,12 @@ const htmlWebpackPlugin = require('html-webpack-plugin');
 // 打包前清除上次打包的文件夹 ---clean-webpack-plugin插件，webpack4以后需要使用结构赋值的方式声明，如const { CleanWebpackPlugin }
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+/*
+mini-css-extract-plugin 分离css
+optimize-css-assets-webpack-plugin 压缩css
+*/
+const miniCssExtractPlugin = require('mini-css-extract-plugin');
+const optimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 module.exports = {
     // resolve()方法把多个片段从右往左解析成绝对路径，如果拼接后还不是绝对路径，将自动叠加上当前目录
     // 绝对路径以 /开头
@@ -29,13 +35,21 @@ module.exports = {
             // 如果从右往左组织的路径片段，不是绝对路径(/开头)，会自动叠加上本地目录
             // 使用path.join(__dirname,'./src/index.html')也可以
             template: './src/index.html',
+            // 覆盖掉output中文件名的声明，打包html时文件名为index.html
             filename: 'index.html',
             minify: {//是一个压缩选项，minify默认值为false,表示不对生成的html文件进行压缩
                 removeComments: true,//移除注释
                 collapseWhitespace: true,//移除空格
-                removeAttributeQuotes:true//移除属性值的引号(并不是所有的引号都去掉，去掉引号会发生的错误的引号不会被移除)
+                removeAttributeQuotes: true//移除属性值的引号(并不是所有的引号都去掉，去掉引号会发生的错误的引号不会被移除)
             }
+        }),
+        // 定义将src下的一个或者多个.css .less .sass(.scss)文件打包生成的一个css文件名
+        new miniCssExtractPlugin({
+            // name是entry入口声明的文件名字，本配置中是app
+            // 此处的filename会覆盖掉output中filename的声明 
+            filename: ' css/[name].css'
         })
+
     ],
     optimization: {//bundle.js中只存放自己的包，把main.js中引入的第三方包抽离出来
         splitChunks: {
@@ -63,14 +77,60 @@ module.exports = {
                 cache: true,
                 parallel: true, //并行压缩
                 sourceMap: true //源码映射
-            })
+            }),
+            // 対生成的css代码进行压缩，mode='production'是生效
+            new optimizeCssAssetsWebpackPlugin()
         ]
     },
     module: {
         rules: [
-            { test: /\.css$/, use: ['style-loader', 'css-loader'] },
-            { test: /\.scss$/, use: ['style-loader', 'css-loader', 'sass-loader'] },
-            { test: /\.less$/, use: ['style-loader', 'css-loader', 'less-loader'] },
+            {
+                test: /\.css$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    // 配置了{ loader: miniCssExtractPlugin.loader }，就不用配置style-loader
+                    // {loader:'style-loader'} //将处理结束的css代码存到js中，运行时嵌入到<style></style>标签中，然后挂载到页面上
+                    { loader: miniCssExtractPlugin.loader },
+                    { loader: 'css-loader' },//css加载器，使得webpack能够识别css代码
+                    { loader: 'postcss-loader' }//承载autoprefixer功能，为css添加前缀
+                ]
+            },
+            {
+                test: /\.scss$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    { loader: miniCssExtractPlugin.loader },
+                    // 'style-loader',
+                    { loader: 'css-loader' },
+                    { loader: 'postcss-loader' },
+                    {
+                        loader: 'sass-loader',
+                        options: {//loader的额外参数，配置视loader具体而定  
+                            sourceMap: true//要安装resolve-url-loader插件，当此配置启用，才能正确加载sass里的相对路径
+                        }
+                    },
+
+
+                ]
+            },
+            {
+                test: /\.less$/,
+                include: [path.resolve(__dirname, 'src')],
+                exclude: /node_modules/,
+                use: [
+                    { loader: miniCssExtractPlugin.loader },
+                    { loader: 'css-loader' },
+                    { loader: 'postcss-loader' },
+                    {
+                        loader: 'less-loader',
+                        options: {//loader的额外参数，配置视loader具体而定  
+                            sourceMap: true//要安装resolve-url-loader插件，当此配置启用，才能正确加载sass里的相对路径
+                        }
+                    }
+                ]
+            },
             // { test: /\.(png|jpg|jpeg|gif|bmp)$/, use: 'url-loader?limit=3462842&name=images/[hash:8]-[name][ext'},
             {
                 test: /\.(jpg|jpeg|bmp|png|gif)$/,
@@ -86,9 +146,13 @@ module.exports = {
                         的路径path:path.resolve(__dirname,'dist')即dist/*.js  和dist/images/*.jpeg等
 
                         */
-                        // 这里这顶打包的图片图片是dist下的images文件夹
-                        // 在output里面已经声明了打包文件的dist路径
+                        // 在output里面已经声明了打包文件的dist路径，打包图片时，叠加images路径
                         outputPath: './images',
+                        /* 
+                        options选项中这个publicPath必须配置，否则下面分离css包后，npm run dev是图片不显示。
+                        原因是：分离css包时，分离的css文件放在css文件夹下，生成的托管页面中图片的路径变成了http://localhost:3000/%20css/images/00759c6d-VDD.jpeg，
+                        */
+                        publicPath: '../images',
                         // 图片大小为48509b,只有设定的limit值小于48509时才会打包到dist/images文件夹。反之，则转化为base64编码字符串
                         // a.打包到dist/images文件夹下
                         limit: 48500,

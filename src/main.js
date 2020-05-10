@@ -3,6 +3,8 @@
 // 初始化包配置文件命令：npm init -y
 import $ from 'jquery';
 import './css/index.scss';
+import './css/style.css';
+import './css/base.less';
 $(function () {
     $('ul>li:even').css("backgroundColor", "red");
     $('ul>li:odd').css("backgroundColor", "hotpink");

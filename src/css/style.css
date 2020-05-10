@@ -1,0 +1,18 @@
+body,
+html,
+ul {
+    padding: 0;
+    margin: 0;
+}
+
+ul>li {
+    font-size: 14px;
+    line-height: 30px;
+}
+
+.son {
+    width: 400px;
+    height: 400px;
+    background: url('../images/wegman.jpg') no-repeat center;
+    background-clip: cover;
+}
