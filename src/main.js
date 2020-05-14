@@ -7,6 +7,7 @@ import './css/style.css';
 import './css/base.less';
 $(function () {
     $('ul>li:even').css("backgroundColor", "red");
+    
     $('ul>li:odd').css("backgroundColor", "hotpink");
 });
 
